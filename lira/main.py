@@ -4,13 +4,13 @@ import logging
 from telegram.ext import (
     Application,
     CommandHandler,
-    MessageHandler,
+    ConversationHandler,
     CallbackQueryHandler,
-    filters,
-    ConversationHandler
+    MessageHandler,
+    filters
 )
 from config import BOT_TOKEN, ADMIN_IDS, DATABASE_URL
-from database import engine, SessionLocal, Base
+from database import engine, Base
 from models import User, BankAccount, Transaction, Settings
 from handlers.user_handlers import (
     start, get_name, get_family_name, get_country, get_phone, get_id_card,
@@ -25,7 +25,6 @@ from handlers.transaction_handlers import (
     send_payment_proof_handler, receive_payment_proof
 )
 from handlers.error_handler import error_handler
-import os
 
 # تنظیمات لاگینگ
 logging.basicConfig(

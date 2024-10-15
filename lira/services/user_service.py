@@ -43,6 +43,17 @@ def get_user_by_telegram_id(telegram_id):
     finally:
         session.close()
 
+def get_user_by_id(user_id):
+    session = SessionLocal()
+    try:
+        user = session.query(User).filter_by(id=user_id).first()
+        return user
+    except SQLAlchemyError as e:
+        logger.error(f"Error fetching user by id: {e}")
+        return None
+    finally:
+        session.close()
+
 def verify_user(user_id):
     session = SessionLocal()
     try:

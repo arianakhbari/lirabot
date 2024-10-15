@@ -1,14 +1,12 @@
 # database.py
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from config import DATABASE_URL
+from models import Base
 
-# ایجاد اتصال به پایگاه داده
-engine = create_engine(DATABASE_URL, connect_args={'check_same_thread': False})
+engine = create_engine(DATABASE_URL, connect_args={'check_same_thread': False})  # اگر از SQLite استفاده می‌کنید
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# ایجاد SessionLocal برای مدیریت جلسات
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-
-# پایه‌ی مدل‌ها
-Base = declarative_base()
+# ایجاد جداول در پایگاه داده
+Base.metadata.create_all(bind=engine)

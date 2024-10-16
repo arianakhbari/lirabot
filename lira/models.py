@@ -16,16 +16,13 @@ class User(Base):
     phone = Column(String, nullable=False)
     is_verified = Column(Boolean, default=False)
     id_card_path = Column(String, nullable=True)
-
-    # روابط (Relationships)
-    bank_accounts = Column(Integer, nullable=True)  # فرض بر این است که رابطه به طور جداگانه مدیریت می‌شود
-    transactions = Column(Integer, nullable=True)  # فرض بر این است که رابطه به طور جداگانه مدیریت می‌شود
+    # اگر ستون‌های اضافی مانند bank_accounts و transactions ندارید، می‌توانید آن‌ها را حذف کنید
 
 class BankAccount(Base):
     __tablename__ = 'bank_accounts'
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)  # فرض بر این است که کلید خارجی به User.id است
+    user_id = Column(Integer, nullable=False)  # کلید خارجی به User.id
     bank_country = Column(String, nullable=False)
     bank_name = Column(String, nullable=False)
     account_number = Column(String, nullable=False)
@@ -34,7 +31,7 @@ class Transaction(Base):
     __tablename__ = 'transactions'
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False)  # فرض بر این است که کلید خارجی به User.id است
+    user_id = Column(Integer, nullable=False)  # کلید خارجی به User.id
     transaction_type = Column(String, nullable=False)  # 'buy' یا 'sell'
     amount = Column(Float, nullable=False)  # مقدار لیر
     total_price = Column(Float, nullable=False)  # مبلغ کل به تومان

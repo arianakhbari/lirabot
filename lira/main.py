@@ -17,18 +17,13 @@ from handlers.user_handlers import (
     get_phone,
     get_id_card,
 )
-from handlers.admin_handlers import (
-    admin_panel,
-    verify_user_handler,
-    reject_user_handler,
-)
-from utils.helpers import is_admin
+from handlers.admin_handlers import setup_admin_handlers
 
 # تنظیمات لاگینگ
 logging.basicConfig(
-    filename='bot.log',  # مسیر فایل لاگ را مشخص کنید
+    filename='bot.log',
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.DEBUG  # سطح لاگینگ را به DEBUG تغییر دهید
+    level=logging.DEBUG
 )
 logger = logging.getLogger(__name__)
 
@@ -42,7 +37,6 @@ logger = logging.getLogger(__name__)
 ) = range(5)
 
 def main():
-    # ایجاد application با استفاده از Polling
     application = Application.builder().token(BOT_TOKEN).build()
 
     # حذف Webhook (اگر قبلاً تنظیم شده باشد)
@@ -64,12 +58,8 @@ def main():
     # اضافه کردن هندلرها به application
     application.add_handler(conv_handler)
 
-    # هندلر برای پنل ادمین
-    application.add_handler(CommandHandler('admin', admin_panel, filters.User(ADMIN_IDS)))
-
-    # هندلرهای مدیریت کاربران توسط ادمین
-    application.add_handler(CommandHandler('verify_user', verify_user_handler, filters.User(ADMIN_IDS)))
-    application.add_handler(CommandHandler('reject_user', reject_user_handler, filters.User(ADMIN_IDS)))
+    # تنظیم هندلرهای ادمین
+    setup_admin_handlers(application)
 
     # شروع Polling
     application.run_polling()

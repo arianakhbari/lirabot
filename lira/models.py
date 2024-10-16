@@ -1,7 +1,8 @@
 # models.py
 
-from sqlalchemy import Column, Integer, String, Boolean, Float, JSON
+from sqlalchemy import Column, Integer, String, Boolean, Float, Text
 from sqlalchemy.ext.declarative import declarative_base
+import json
 
 Base = declarative_base()
 
@@ -16,7 +17,6 @@ class User(Base):
     phone = Column(String, nullable=False)
     is_verified = Column(Boolean, default=False)
     id_card_path = Column(String, nullable=True)
-    # اگر ستون‌های اضافی مانند bank_accounts و transactions ندارید، می‌توانید آن‌ها را حذف کنید
 
 class BankAccount(Base):
     __tablename__ = 'bank_accounts'
@@ -46,4 +46,4 @@ class Settings(Base):
     buy_enabled = Column(Boolean, default=True)
     sell_enabled = Column(Boolean, default=True)
     admin_bank_info = Column(String, nullable=True)
-    admin_ids = Column(JSON, nullable=False)  # ذخیره لیست آیدی‌های ادمین‌ها به صورت JSON
+    admin_ids = Column(Text, nullable=False)  # تغییر نوع داده به Text

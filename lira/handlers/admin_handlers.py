@@ -17,7 +17,6 @@ from services.user_service import (
     reject_user,
 )
 from utils.helpers import is_admin
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,6 @@ logger = logging.getLogger(__name__)
     SET_ADMIN_BANK_INFO,
 ) = range(4)
 
-# پنل ادمین
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not is_admin(user_id):
@@ -48,7 +46,6 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return SELECT_ACTION
 
-# هندلر برای مدیریت CallbackQuery در پنل ادمین
 async def admin_panel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -92,7 +89,6 @@ async def admin_panel_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         await query.message.reply_text("⚠️ گزینه نامعتبر انتخاب شده است.")
         return SELECT_ACTION
 
-# ذخیره نرخ خرید
 async def save_buy_rate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not is_admin(user_id):
@@ -113,7 +109,6 @@ async def save_buy_rate(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return SET_BUY_RATE
     return SELECT_ACTION
 
-# ذخیره نرخ فروش
 async def save_sell_rate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not is_admin(user_id):
@@ -134,7 +129,6 @@ async def save_sell_rate(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return SET_SELL_RATE
     return SELECT_ACTION
 
-# ذخیره اطلاعات بانکی ادمین
 async def save_admin_bank_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not is_admin(user_id):
@@ -149,41 +143,7 @@ async def save_admin_bank_info(update: Update, context: ContextTypes.DEFAULT_TYP
         return SET_ADMIN_BANK_INFO
     return SELECT_ACTION
 
-# تأیید یا رد کاربر
-async def approve_reject_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    data = query.data
-
-    user_id = update.effective_user.id
-    if not is_admin(user_id):
-        await query.message.reply_text("❌ شما دسترسی لازم برای انجام این عمل را ندارید.")
-        return ConversationHandler.END
-
-    if data.startswith('approve_user_'):
-        target_user_id = int(data.split('_')[-1])
-        success = verify_user(target_user_id)
-        if success:
-            await query.message.reply_text("✅ کاربر تأیید شد.")
-            await context.bot.send_message(chat_id=target_user_id, text="✅ حساب شما تأیید شد!")
-        else:
-            await query.message.reply_text("⚠️ خطا در تأیید کاربر.")
-    elif data.startswith('reject_user_'):
-        target_user_id = int(data.split('_')[-1])
-        success = reject_user(target_user_id)
-        if success:
-            await query.message.reply_text("❌ کاربر رد شد.")
-            await context.bot.send_message(chat_id=target_user_id, text="❌ حساب شما توسط ادمین رد شد.")
-        else:
-            await query.message.reply_text("⚠️ خطا در رد کاربر.")
-    else:
-        await query.message.reply_text("⚠️ گزینه نامعتبر انتخاب شده است.")
-
-    return SELECT_ACTION
-
-# تنظیم هندلرهای ادمین
 def setup_admin_handlers(application):
-    # ConversationHandler برای پنل ادمین
     admin_conv_handler = ConversationHandler(
         entry_points=[CommandHandler('admin', admin_panel)],
         states={
@@ -204,6 +164,3 @@ def setup_admin_handlers(application):
     )
 
     application.add_handler(admin_conv_handler)
-    # هندلر برای تأیید یا رد کاربر
-    application.add_handler(CallbackQueryHandler(approve_reject_user, pattern='^approve_user_\\d+$|^reject_user_\\d+$'))
-

@@ -1,8 +1,9 @@
 # handlers/user_handlers.py
 
 from telegram import Update
-from telegram.ext import ContextTypes, ConversationHandler
-from services.user_service import register_user, get_settings
+from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filters
+from services.user_service import register_user
+from config import ADMIN_IDS
 import logging
 
 logger = logging.getLogger(__name__)
@@ -61,23 +62,14 @@ async def get_id_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("📥 اطلاعات شما دریافت شد و در انتظار تأیید ادمین است.")
 
         # ارسال پیام به ادمین‌ها برای اطلاع‌رسانی
-        settings = get_settings()
-        if settings and settings.admin_ids:
-            admin_ids = settings.admin_ids
-            if isinstance(admin_ids, str):
-                # تبدیل رشته JSON به لیست
-                import json
-                admin_ids = json.loads(admin_ids)
-            for admin_id in admin_ids:
-                try:
-                    await context.bot.send_message(
-                        chat_id=admin_id,
-                        text=f"کاربر جدید {user.name} {user.family_name} نیاز به تأیید دارد."
-                    )
-                except Exception as e:
-                    logger.error(f"Error sending message to admin {admin_id}: {e}")
-        else:
-            logger.warning("No admin IDs found in settings.")
+        for admin_id in ADMIN_IDS:
+            try:
+                await context.bot.send_message(
+                    chat_id=admin_id,
+                    text=f"کاربر جدید {user.name} {user.family_name} نیاز به تأیید دارد."
+                )
+            except Exception as e:
+                logger.error(f"Error sending message to admin {admin_id}: {e}")
     else:
         await update.message.reply_text("⚠️ خطا در ذخیره‌سازی اطلاعات شما. لطفاً دوباره تلاش کنید.")
 

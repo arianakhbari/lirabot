@@ -23,10 +23,11 @@ logger = logging.getLogger(__name__)
 
 # تعریف مراحل ConversationHandler
 (
+    SELECT_ACTION,
     SET_BUY_RATE,
     SET_SELL_RATE,
     SET_ADMIN_BANK_INFO,
-) = range(3)
+) = range(4)
 
 # پنل ادمین
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -45,7 +46,7 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("⚙️ **پنل مدیریت:**", reply_markup=reply_markup, parse_mode='Markdown')
 
-    return ConversationHandler.END
+    return SELECT_ACTION
 
 # هندلر برای مدیریت CallbackQuery در پنل ادمین
 async def admin_panel_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -73,6 +74,7 @@ async def admin_panel_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             await query.message.reply_text(f"📥 قابلیت خرید به {status_text} تغییر یافت.")
         else:
             await query.message.reply_text("⚠️ خطا در بازیابی تنظیمات.")
+        return SELECT_ACTION
     elif data == 'toggle_sell':
         settings = get_settings()
         if settings:
@@ -82,13 +84,13 @@ async def admin_panel_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             await query.message.reply_text(f"📤 قابلیت فروش به {status_text} تغییر یافت.")
         else:
             await query.message.reply_text("⚠️ خطا در بازیابی تنظیمات.")
+        return SELECT_ACTION
     elif data == 'set_admin_bank_info':
         await query.message.reply_text("🏦 لطفاً اطلاعات حساب بانکی ادمین را وارد کنید:")
         return SET_ADMIN_BANK_INFO
     else:
         await query.message.reply_text("⚠️ گزینه نامعتبر انتخاب شده است.")
-
-    return ConversationHandler.END
+        return SELECT_ACTION
 
 # ذخیره نرخ خرید
 async def save_buy_rate(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -109,7 +111,7 @@ async def save_buy_rate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError as ve:
         await update.message.reply_text(f"⚠️ خطا: {ve}\nلطفاً یک عدد معتبر وارد کنید:")
         return SET_BUY_RATE
-    return ConversationHandler.END
+    return SELECT_ACTION
 
 # ذخیره نرخ فروش
 async def save_sell_rate(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -130,7 +132,7 @@ async def save_sell_rate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError as ve:
         await update.message.reply_text(f"⚠️ خطا: {ve}\nلطفاً یک عدد معتبر وارد کنید:")
         return SET_SELL_RATE
-    return ConversationHandler.END
+    return SELECT_ACTION
 
 # ذخیره اطلاعات بانکی ادمین
 async def save_admin_bank_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -145,9 +147,9 @@ async def save_admin_bank_info(update: Update, context: ContextTypes.DEFAULT_TYP
     else:
         await update.message.reply_text("⚠️ خطا در ذخیره اطلاعات بانکی. لطفاً دوباره تلاش کنید.")
         return SET_ADMIN_BANK_INFO
-    return ConversationHandler.END
+    return SELECT_ACTION
 
-# تایید یا رد کاربر
+# تأیید یا رد کاربر
 async def approve_reject_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -156,7 +158,7 @@ async def approve_reject_user(update: Update, context: ContextTypes.DEFAULT_TYPE
     user_id = update.effective_user.id
     if not is_admin(user_id):
         await query.message.reply_text("❌ شما دسترسی لازم برای انجام این عمل را ندارید.")
-        return
+        return ConversationHandler.END
 
     if data.startswith('approve_user_'):
         target_user_id = int(data.split('_')[-1])
@@ -177,20 +179,31 @@ async def approve_reject_user(update: Update, context: ContextTypes.DEFAULT_TYPE
     else:
         await query.message.reply_text("⚠️ گزینه نامعتبر انتخاب شده است.")
 
+    return SELECT_ACTION
+
 # تنظیم هندلرهای ادمین
 def setup_admin_handlers(application):
     # ConversationHandler برای پنل ادمین
     admin_conv_handler = ConversationHandler(
         entry_points=[CommandHandler('admin', admin_panel)],
         states={
-            SET_BUY_RATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, save_buy_rate)],
-            SET_SELL_RATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, save_sell_rate)],
-            SET_ADMIN_BANK_INFO: [MessageHandler(filters.TEXT & ~filters.COMMAND, save_admin_bank_info)],
+            SELECT_ACTION: [
+                CallbackQueryHandler(admin_panel_callback),
+            ],
+            SET_BUY_RATE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, save_buy_rate),
+            ],
+            SET_SELL_RATE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, save_sell_rate),
+            ],
+            SET_ADMIN_BANK_INFO: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, save_admin_bank_info),
+            ],
         },
         fallbacks=[],
     )
 
     application.add_handler(admin_conv_handler)
-    application.add_handler(CallbackQueryHandler(admin_panel_callback, pattern='^set_buy_rate$|^set_sell_rate$|^toggle_buy$|^toggle_sell$|^set_admin_bank_info$'))
+    # هندلر برای تأیید یا رد کاربر
     application.add_handler(CallbackQueryHandler(approve_reject_user, pattern='^approve_user_\\d+$|^reject_user_\\d+$'))
 

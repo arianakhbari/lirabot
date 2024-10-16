@@ -1,11 +1,44 @@
 # handlers/user_handlers.py
 
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler
 from services.user_service import register_user, get_settings
 import logging
 
 logger = logging.getLogger(__name__)
+
+# مراحل ConversationHandler
+(
+    NAME,
+    FAMILY_NAME,
+    COUNTRY,
+    PHONE,
+    ID_CARD,
+) = range(5)
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("سلام! لطفاً نام خود را وارد کنید:")
+    return NAME
+
+async def get_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['name'] = update.message.text
+    await update.message.reply_text("لطفاً نام خانوادگی خود را وارد کنید:")
+    return FAMILY_NAME
+
+async def get_family_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['family_name'] = update.message.text
+    await update.message.reply_text("لطفاً کشور خود را وارد کنید:")
+    return COUNTRY
+
+async def get_country(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['country'] = update.message.text
+    await update.message.reply_text("لطفاً شماره تلفن خود را وارد کنید:")
+    return PHONE
+
+async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['phone'] = update.message.text
+    await update.message.reply_text("لطفاً عکس کارت شناسایی خود را ارسال کنید:")
+    return ID_CARD
 
 async def get_id_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_data = context.user_data
@@ -30,7 +63,12 @@ async def get_id_card(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # ارسال پیام به ادمین‌ها برای اطلاع‌رسانی
         settings = get_settings()
         if settings and settings.admin_ids:
-            for admin_id in settings.admin_ids:
+            admin_ids = settings.admin_ids
+            if isinstance(admin_ids, str):
+                # تبدیل رشته JSON به لیست
+                import json
+                admin_ids = json.loads(admin_ids)
+            for admin_id in admin_ids:
                 try:
                     await context.bot.send_message(
                         chat_id=admin_id,

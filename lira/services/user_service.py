@@ -4,7 +4,7 @@ import logging
 from sqlalchemy.exc import SQLAlchemyError
 from database import SessionLocal
 from models import User, Settings
-from utils.helpers import is_admin
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -108,12 +108,15 @@ def get_settings():
                 buy_enabled=True,
                 sell_enabled=True,
                 admin_bank_info="",
-                admin_ids=[]
+                admin_ids=json.dumps([])  # تبدیل لیست به رشته JSON
             )
             session.add(settings)
             session.commit()
             session.refresh(settings)
             logger.info("Default settings created.")
+        else:
+            # تبدیل رشته JSON به لیست
+            settings.admin_ids = json.loads(settings.admin_ids)
         return settings
     except SQLAlchemyError as e:
         logger.error(f"Error fetching settings: {e}")
@@ -137,7 +140,7 @@ def update_settings(buy_rate=None, sell_rate=None, buy_enabled=None, sell_enable
             if admin_bank_info is not None:
                 settings.admin_bank_info = admin_bank_info
             if admin_ids is not None:
-                settings.admin_ids = admin_ids
+                settings.admin_ids = json.dumps(admin_ids)  # تبدیل لیست به رشته JSON
             session.commit()
             logger.info(f"Settings updated: {settings}")
             return True

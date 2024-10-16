@@ -32,7 +32,10 @@ async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     if not is_admin(user_id):
         await update.message.reply_text("❌ شما دسترسی لازم برای انجام این عمل را ندارید.")
+        logger.warning(f"Unauthorized access attempt by user {user_id}")
         return ConversationHandler.END
+
+    # سایر کدهای مربوط به پنل ادمین
 
     keyboard = [
         [KeyboardButton("تنظیم نرخ خرید"), KeyboardButton("تنظیم نرخ فروش")],

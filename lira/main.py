@@ -54,7 +54,22 @@ logger = logging.getLogger(__name__)
     TRANSACTION_PROOF,
 ) = range(10)
 
+async def error_handler(update: object, context: telegram.ext.ContextTypes.DEFAULT_TYPE) -> None:
+    """لاگ کردن خطاها و ارسال پیام به کاربر."""
+    logger.error(msg="Exception while handling an update:", exc_info=context.error)
+
+    # ارسال پیام به کاربر
+    if isinstance(update, telegram.Update) and update.effective_user:
+        try:
+            await context.bot.send_message(
+                chat_id=update.effective_user.id,
+                text="⚠️ مشکلی در پردازش درخواست شما به وجود آمد. لطفاً دوباره تلاش کنید."
+            )
+        except Exception as e:
+            logger.error(f"Failed to send error message to user: {e}")
+
 async def main():
+    # ساخت Application
     application = Application.builder().token(BOT_TOKEN).build()
 
     # حذف Webhook (اگر قبلاً تنظیم شده باشد)
@@ -111,8 +126,14 @@ async def main():
     # تنظیم هندلرهای ادمین
     setup_admin_handlers(application)
 
-    # شروع Polling
+    # اضافه کردن هندلر خطا
+    application.add_error_handler(error_handler)
+
+    # اجرای ربات با Polling
     await application.run_polling()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Bot stopped by user")

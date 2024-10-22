@@ -2,14 +2,17 @@
 
 import asyncio
 import logging
+from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
     ConversationHandler,
     MessageHandler,
+    CallbackQueryHandler,
     filters,
+    ContextTypes,
 )
-from config import BOT_TOKEN
+from config import BOT_TOKEN, DATABASE_URL
 from handlers.user_handlers import (
     start,
     get_name,
@@ -31,6 +34,9 @@ from handlers.user_handlers import (
     track_transactions,
 )
 from handlers.admin_handlers import setup_admin_handlers
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from models import Base
 
 # تنظیمات لاگینگ
 logging.basicConfig(
@@ -54,12 +60,12 @@ logger = logging.getLogger(__name__)
     TRANSACTION_PROOF,
 ) = range(10)
 
-async def error_handler(update: object, context: telegram.ext.ContextTypes.DEFAULT_TYPE) -> None:
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """لاگ کردن خطاها و ارسال پیام به کاربر."""
     logger.error(msg="Exception while handling an update:", exc_info=context.error)
 
     # ارسال پیام به کاربر
-    if isinstance(update, telegram.Update) and update.effective_user:
+    if isinstance(update, Update) and update.effective_user:
         try:
             await context.bot.send_message(
                 chat_id=update.effective_user.id,
@@ -69,8 +75,17 @@ async def error_handler(update: object, context: telegram.ext.ContextTypes.DEFAU
             logger.error(f"Failed to send error message to user: {e}")
 
 async def main():
+    # اتصال به بانک اطلاعاتی
+    engine = create_engine(DATABASE_URL)
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
     # ساخت Application
     application = Application.builder().token(BOT_TOKEN).build()
+
+    # ذخیره نشست در bot_data
+    application.bot_data['db'] = session
 
     # حذف Webhook (اگر قبلاً تنظیم شده باشد)
     await application.bot.delete_webhook(drop_pending_updates=True)

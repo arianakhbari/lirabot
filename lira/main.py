@@ -147,8 +147,18 @@ async def main():
     # اجرای ربات با Polling
     await application.run_polling()
 
-if __name__ == '__main__':
+def run_bot():
     try:
         asyncio.run(main())
+    except RuntimeError as e:
+        if 'This event loop is already running' in str(e):
+            loop = asyncio.get_event_loop()
+            loop.create_task(main())
+            loop.run_forever()
+        else:
+            raise
     except KeyboardInterrupt:
         logger.info("Bot stopped by user")
+
+if __name__ == '__main__':
+    run_bot()
